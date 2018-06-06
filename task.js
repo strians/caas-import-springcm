@@ -37,6 +37,13 @@ module.exports = (task, callback) => {
 
       async.eachSeries(_.get(task, 'paths'), (path, callback) => {
         springCm.getDocuments(_.get(path, 'remote'), (err, documents) => {
+          // If there's an error scraping this directory, skip and continue
+          if (err) {
+            winston.error(err);
+
+            return callback();
+          }
+
           var included = filter(_.get(path, 'filter'), documents);
 
           winston.info('Found', included.length, 'document(s) to download');

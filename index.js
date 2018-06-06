@@ -7,8 +7,6 @@ const task = require('./task');
 
 require('winston-daily-rotate-file');
 
-var logger;
-
 async.waterfall([
   (callback) => {
     /**
@@ -102,4 +100,4 @@ async.waterfall([
   }
 
   process.exit(code);
-})
+});
