@@ -1,0 +1,46 @@
+{
+  "name": "caas-import-springcm",
+  "version": "0.1.0",
+  "description": "CaaS SpringCM import service",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/paulholden2/caas-import-springcm.git"
+  },
+  "keywords": [
+    "caas",
+    "classification",
+    "service",
+    "cloud",
+    "document",
+    "management",
+    "spring",
+    "cm",
+    "springcm"
+  ],
+  "author": "Paul Holden",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/paulholden2/caas-import-springcm/issues"
+  },
+  "homepage": "https://github.com/paulholden2/caas-import-springcm#readme",
+  "dependencies": {
+    "async": "^2.6.1",
+    "lodash": "^4.17.10",
+    "matcher": "^1.1.1",
+    "springcm-node-sdk": "^1.2.1",
+    "winston": "^2.4.2",
+    "winston-daily-rotate-file": "^3.2.1"
+  },
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "eslint-config-standard": "^11.0.0",
+    "eslint-plugin-import": "^2.12.0",
+    "eslint-plugin-node": "^6.0.1",
+    "eslint-plugin-promise": "^3.8.0",
+    "eslint-plugin-standard": "^3.1.0"
+  }
+}
