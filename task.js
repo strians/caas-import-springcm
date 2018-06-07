@@ -1,3 +1,4 @@
+const fs = require('fs');
 const _ = require('lodash');
 const async = require('async');
 const winston = require('winston');
@@ -36,7 +37,9 @@ module.exports = (task, callback) => {
        */
 
       async.eachSeries(_.get(task, 'paths'), (path, callback) => {
-        springCm.getDocuments(_.get(path, 'remote'), (err, documents) => {
+        var remote = _.get(path, 'remote');
+
+        springCm.getDocuments(remote, (err, documents) => {
           // If there's an error scraping this directory, skip and continue
           if (err) {
             winston.error(err);
@@ -44,15 +47,31 @@ module.exports = (task, callback) => {
             return callback();
           }
 
+          // Filter listed documents
           var included = filter(_.get(path, 'filter'), documents);
 
           winston.info('Found', included.length, 'document(s) to download');
 
-          // For each file
-          //  > Download to file named with SpringCM UID
-          //  > Move to wastebin (delete by default)
+          // Download each document and move to wastebin (delete by default)
+          async.eachSeries(included, (doc, callback) => {
+            springCm.downloadDocument(doc, fs.createWriteStream(doc.getUid() + '.pdf'), (err) => {
+              if (err) {
+                winston.error(err);
+                return callback();
+              }
 
-          callback();
+              winston.info('Downloaded', doc.getName(), '-->', doc.getUid() + '.pdf');
+
+              var wastebin = _.get(path, 'wastebin');
+
+              // Import directory can't be wastebin
+              if (wastebin && wastebin !== remote) {
+                springCm.moveDocument(doc, wastebin, callback);
+              } else {
+                springCm.deleteDocument(doc, callback);
+              }
+            });
+          }, callback);
         });
       }, callback);
     }
@@ -61,6 +80,7 @@ module.exports = (task, callback) => {
       winston.error(err);
     }
 
+    // Disconnect from SpringCM if we have an active client
     if (springCm) {
       winston.info('Disconnecting from SpringCM');
 
