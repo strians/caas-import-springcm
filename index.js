@@ -4,8 +4,14 @@ const _ = require('lodash');
 const async = require('async');
 const winston = require('winston');
 const task = require('./task');
+const commander  = require('commander');
 
 require('winston-daily-rotate-file');
+
+commander
+  .version('0.1.0', '-v, --version', 'Display the current software version')
+  .option('-c, --config [path]', 'Specify a configuration file to load')
+  .parse(process.argv);
 
 async.waterfall([
   (callback) => {
@@ -52,10 +58,16 @@ async.waterfall([
      * import service.
      */
 
-    winston.info('Loading .caasrc');
+    var config = '.caasrc';
+
+    if (commander.config) {
+      config = commander.config;
+    }
+
+    winston.info('Loading', config);
 
     // Read file, pass it on
-    fs.readFile(path.join(__dirname, '.caasrc'), callback);
+    fs.readFile(path.join(__dirname, config), callback);
   },
   (data, callback) => {
     /**

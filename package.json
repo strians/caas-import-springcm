@@ -30,6 +30,7 @@
   "homepage": "https://github.com/paulholden2/caas-import-springcm#readme",
   "dependencies": {
     "async": "^2.6.1",
+    "commander": "^2.15.1",
     "lodash": "^4.17.10",
     "matcher": "^1.1.1",
     "springcm-node-sdk": "^1.3.0",
