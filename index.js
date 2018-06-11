@@ -4,7 +4,7 @@ const _ = require('lodash');
 const async = require('async');
 const winston = require('winston');
 const task = require('./task');
-const commander  = require('commander');
+const commander = require('commander');
 
 require('winston-daily-rotate-file');
 
