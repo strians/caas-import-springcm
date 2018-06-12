@@ -25,6 +25,7 @@ the same directory as your entry file (usually top-level folder).
         "paths": [
           {
             "remote": "/Import SpringCM",
+            "local": "/New Files Here",
             "wastebin": "/Downloaded",
             "recurse": false,
             "filter": {
@@ -46,7 +47,7 @@ the same directory as your entry file (usually top-level folder).
 ```
 
 | Option | Type | Description |
-|-|-|
+|--------|------|-------------|
 | `tasks` | Object | Array of import tasks to perform |
 | `task.job` | String | Job name or identifier, for logging purposes |
 | `task.customer` | String | Customer name or identifier, for logging purposes |
