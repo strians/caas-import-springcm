@@ -1,5 +1,8 @@
+const os = require('os');
 const fs = require('fs');
+const path = require('path');
 const _ = require('lodash');
+const rimraf = require('rimraf');
 const async = require('async');
 const winston = require('winston');
 const SpringCM = require('springcm-node-sdk');
@@ -14,7 +17,7 @@ module.exports = (task, callback) => {
   winston.info('Executing task', task);
 
   var auth = _.get(task, 'auth');
-  var springCm;
+  var springCm, tmpDir;
 
   async.waterfall([
     (callback) => {
@@ -32,15 +35,35 @@ module.exports = (task, callback) => {
     },
     (callback) => {
       /**
+       * Create a temporary directory.
+       */
+
+       fs.mkdtemp(path.join(os.tmpdir(), 'caas-import-springcm-'), (err, folder) => {
+         if (err) {
+           return callback(err);
+         }
+
+         tmpDir = folder;
+
+         winston.info('Creating temp directory', tmpDir, 'for downloads');
+
+         callback();
+       });
+    },
+    (callback) => {
+      /**
        * For each path, get a directory listing of the remote directory.
        * Apply configured filters to that listing then queue up downloads.
        */
 
-      async.eachSeries(_.get(task, 'paths'), (path, callback) => {
-        var remote = _.get(path, 'remote');
-        var recurse = _.get(path, 'recurse');
+      async.eachSeries(_.get(task, 'paths'), (pathConfig, callback) => {
+        var remote = _.get(pathConfig, 'remote');
+        var local = _.get(pathConfig, 'local');
+        var recurse = _.get(pathConfig, 'recurse');
 
         var documentQueue = async.queue((doc, callback) => {
+          var tmpPath, localPath;
+
           async.waterfall([
             (callback) => {
               /**
@@ -50,23 +73,31 @@ module.exports = (task, callback) => {
               springCm.getDocument(doc, callback);
             },
             (doc, callback) => {
-              springCm.downloadDocument(doc, fs.createWriteStream(doc.getUid() + '.pdf'), (err) => {
+              var docName = `${doc.getUid()}.pdf`;
+
+              tmpPath = path.join(tmpDir, docName);
+              localPath = path.join(local, docName);
+
+              springCm.downloadDocument(doc, fs.createWriteStream(tmpPath), (err) => {
                 if (err) {
                   winston.error(err);
                   return callback();
                 }
 
-                winston.info('Downloaded', doc.getPath(), '-->', doc.getUid() + '.pdf');
+                winston.info('Downloaded', doc.getPath(), 'to', tmpPath);
 
-                var wastebin = _.get(path, 'wastebin');
+                var wastebin = _.get(pathConfig, 'wastebin');
 
                 // Import directory can't be wastebin
                 if (wastebin && wastebin !== remote) {
-                  springCm.moveDocument(doc, wastebin, callback);
+                  springCm.moveDocument(doc, wastebin, (err) => callback(err));
                 } else {
                   springCm.deleteDocument(doc, callback);
                 }
               });
+            },
+            (callback) => {
+              fs.copyFile(tmpPath, localPath, fs.constants.COPYFILE_EXCL, callback)
             }
           ], callback);
         });
@@ -103,7 +134,7 @@ module.exports = (task, callback) => {
                 }
 
                 // Filter listed documents
-                var included = filter(_.get(path, 'filter'), documents);
+                var included = filter(_.get(pathConfig, 'filter'), documents);
 
                 winston.info('Found', included.length, 'document(s) in', folder.getPath(), 'to download');
 
@@ -142,14 +173,14 @@ module.exports = (task, callback) => {
         // Wait for both queues to complete
         async.waterfall([
           (callback) => {
-            if (folderQueue.length() > 0) {
+            if (folderQueue.running() > 0 || folderQueue.length() > 0) {
               folderQueue.drain = callback;
             } else {
               callback();
             }
           },
           (callback) => {
-            if (documentQueue.length() > 0) {
+            if (documentQueue.running() > 0 || documentQueue.length() > 0) {
               documentQueue.drain = callback;
             } else {
               callback();
@@ -157,6 +188,15 @@ module.exports = (task, callback) => {
           }
         ], callback);
       }, callback);
+    },
+    (callback) => {
+      /**
+       * Delete temporary directory
+       */
+
+      winston.info('Deleting temp directory', tmpDir);
+
+      rimraf(tmpDir, callback);
     }
   ], (err) => {
     if (err) {
