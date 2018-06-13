@@ -13,6 +13,8 @@ commander
   .option('-c, --config [path]', 'Specify a configuration file to load')
   .parse(process.argv);
 
+var fileTransport, consoleTransport;
+
 async.waterfall([
   (callback) => {
     /**
@@ -25,14 +27,14 @@ async.waterfall([
      */
 
     // Daily rotating log files stored locally
-    var fileTransport = new (winston.transports.DailyRotateFile)({
+    fileTransport = new (winston.transports.DailyRotateFile)({
       filename: path.join(__dirname, 'logs', 'log-%DATE%.log'),
       datePattern: 'YYYY-MM-DD',
       maxFiles: '14d'
     });
 
     //
-    var consoleTransport = new (winston.transports.Console)();
+    consoleTransport = new (winston.transports.Console)();
 
     // Set up default logger with our transports
     winston.configure({
@@ -111,5 +113,10 @@ async.waterfall([
     winston.error(err);
   }
 
-  process.exit(code);
+  async.parallel([
+    callback => fileTransport.on('finished', callback),
+    callback => consoleTransport.on('finished', callback)
+  ], () => {
+    process.exit(code);
+  });
 });
