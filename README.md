@@ -56,6 +56,7 @@ the same directory as your entry file (usually top-level folder).
 | `task.auth.clientSecret` | `String` | The generated client secret associated with your client ID |
 | `task.paths` | `Object` | Remote directory configuration for file scraping |
 | `task.path.remote` | `String` | The remote directory path |
+| `task.path.local` | `String` | The local directory path |
 | `task.path.wastebin` | `String` | The remote directory to move files to once downloaded |
 | `task.path.recurse` | `Boolean` | Whether to recurse through subdirectories when importing or not |
 | `task.path.filter` | `Object` |  File filtering configuration |
