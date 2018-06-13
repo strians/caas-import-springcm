@@ -60,5 +60,5 @@ the same directory as your entry file (usually top-level folder).
 | `task.path.recurse` | `Boolean` | Whether to recurse through subdirectories when importing or not |
 | `task.path.filter` | `Object` |  File filtering configuration |
 | `task.path.filter.in` | `String`, `Array` | Wildcard expression (or array of expressions) to include |
-| `task.path.filter.out` | `String`, `Array` | Wildcard expression (or array of expression) to exclude, overriding any `in` filters |
+| `task.path.filter.out` | `String`, `Array` | Wildcard expression (or array of expressions) to exclude, overriding any `in` filters |
 
