@@ -32,13 +32,18 @@ async.waterfall([
 
     // Daily rotating log files stored locally
     fileTransport = new (winston.transports.DailyRotateFile)({
+      level: 'info',
+      format: winston.format.simple(),
       filename: path.join(__dirname, 'logs', 'log-%DATE%.log'),
       datePattern: 'YYYY-MM-DD',
       maxFiles: '14d'
     });
 
     //
-    consoleTransport = new (winston.transports.Console)();
+    consoleTransport = new (winston.transports.Console)({
+      level: 'info',
+      format: winston.format.simple()
+    });
 
     var transports = [
       consoleTransport,
@@ -49,7 +54,11 @@ async.waterfall([
 
     if (cw) {
       // Set up logging to AWS CloudWatch Logs
-      cwlTransport = new WinstonCloudWatch(cw);
+      cwlTransport = new WinstonCloudWatch(_.merge(cw, {
+        messageFormatter: (entry) => {
+          return JSON.stringify(_.get(entry, 'meta'));
+        }
+      }));
 
       transports.push(cwlTransport);
     }

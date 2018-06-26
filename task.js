@@ -25,7 +25,10 @@ module.exports = (task, callback) => {
        * Connect to SpringCM.
        */
 
-      winston.info('Connecting to SpringCM with client ID', _.get(auth, 'clientId'));
+      winston.info('Connecting to SpringCM', {
+        clientId: _.get(auth, 'clientId'),
+        dataCenter: _.get(auth, 'dataCenter')
+      });
 
       // Create SpringCM client
       springCm = new SpringCM(auth);
@@ -45,7 +48,9 @@ module.exports = (task, callback) => {
 
          tmpDir = folder;
 
-         winston.info('Creating temp directory', tmpDir, 'for downloads');
+         winston.info('Creating temp directory', {
+           directory: tmpDir
+         });
 
          callback();
        });
@@ -84,7 +89,10 @@ module.exports = (task, callback) => {
                   return callback();
                 }
 
-                winston.info('Downloaded', doc.getPath(), 'to', tmpPath);
+                winston.info('Downloaded document', {
+                  remote: doc.getPath(),
+                  local: tmpPath
+                });
 
                 var wastebin = _.get(pathConfig, 'wastebin');
 
@@ -136,7 +144,10 @@ module.exports = (task, callback) => {
                 // Filter listed documents
                 var included = filter(_.get(pathConfig, 'filter'), documents);
 
-                winston.info('Found', included.length, 'document(s) in', folder.getPath(), 'to download');
+                winston.info(`Found ${included.length} document(s) to download`, {
+                  documentCount: included.length,
+                  remote: folder.getPath()
+                });
 
                 // Push each document in the document download queue
                 _.each(included, doc => documentQueue.push(doc));
@@ -194,7 +205,9 @@ module.exports = (task, callback) => {
        * Delete temporary directory
        */
 
-      winston.info('Deleting temp directory', tmpDir);
+      winston.info('Deleting temp directory', {
+        directory: tmpDir
+      });
 
       rimraf(tmpDir, callback);
     }
