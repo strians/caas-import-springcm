@@ -1,19 +1,23 @@
 const fs = require('fs');
 const path = require('path');
 const _ = require('lodash');
+const rc = require('rc');
 const async = require('async');
 const winston = require('winston');
 const task = require('./task');
 const commander = require('commander');
+const WinstonCloudWatch = require('winston-cloudwatch');
 
 require('winston-daily-rotate-file');
+
+var config = rc('caas');
 
 commander
   .version('0.1.0', '-v, --version', 'Display the current software version')
   .option('-c, --config [path]', 'Specify a configuration file to load')
   .parse(process.argv);
 
-var fileTransport, consoleTransport;
+var fileTransport, consoleTransport, cwlTransport;
 
 async.waterfall([
   (callback) => {
@@ -36,17 +40,28 @@ async.waterfall([
     //
     consoleTransport = new (winston.transports.Console)();
 
+    var transports = [
+      consoleTransport,
+      fileTransport
+    ];
+
+    var cw = _.get(config, 'import-springcm.logs.cloudwatch');
+
+    if (cw) {
+      // Set up logging to AWS CloudWatch Logs
+      cwlTransport = new WinstonCloudWatch(cw);
+
+      transports.push(cwlTransport);
+    }
+
     // Set up default logger with our transports
     winston.configure({
       level: 'info',
-      transports: [
-        consoleTransport,
-        fileTransport
-      ]
+      transports: transports
     });
 
     // Set up unhandled exception logging to our local log files and console
-    winston.handleExceptions([ consoleTransport, fileTransport ]);
+    winston.handleExceptions(transports);
 
     winston.info('========================================');
     winston.info('caas-import-springcm');
@@ -56,48 +71,10 @@ async.waterfall([
   },
   (callback) => {
     /**
-     * Load the .caasrc, which contains the configuration for the SpringCM
-     * import service.
-     */
-
-    var config = '.caasrc';
-
-    if (commander.config) {
-      config = commander.config;
-    }
-
-    winston.info('Loading', config);
-
-    // Read file, pass it on
-    fs.readFile(path.join(__dirname, config), callback);
-  },
-  (data, callback) => {
-    /**
-     * Parse the JSON config into a usable object
-     */
-
-    callback(null, JSON.parse(data));
-  },
-  (config, callback) => {
-    /**
-     * Scan the configuration and do any additional setup or initialization.
-     */
-
-    winston.info('Loading import-springcm configuration');
-
-    // We expect to find an import-springcm configuration in .caasrc
-    if (!_.get(config, 'import-springcm')) {
-      return callback(new Error('No import-springcm configuration found'));
-    }
-
-    callback(null, _.get(config, 'import-springcm.tasks'));
-  },
-  (tasks, callback) => {
-    /**
      * Run each configured import-springcm task.
      */
 
-    async.eachSeries(tasks, task, (err) => {
+    async.eachSeries(_.get(config, 'import-springcm.tasks'), task, (err) => {
       callback(err);
     });
   }
@@ -114,8 +91,15 @@ async.waterfall([
   }
 
   async.parallel([
-    callback => fileTransport.on('finished', callback),
-    callback => consoleTransport.on('finished', callback)
+    (callback) => fileTransport.on('finished', callback),
+    (callback) => consoleTransport.on('finished', callback),
+    (callback) => {
+      if (cwlTransport) {
+        cwlTransport.kthxbye(callback);
+      } else {
+        callback();
+      }
+    }
   ], () => {
     process.exit(code);
   });
