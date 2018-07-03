@@ -4,20 +4,48 @@ const _ = require('lodash');
 const rc = require('rc');
 const async = require('async');
 const winston = require('winston');
+const { Validator } = require('jsonschema');
 const task = require('./task');
 const commander = require('commander');
 const WinstonCloudWatch = require('winston-cloudwatch');
 
 require('winston-daily-rotate-file');
 
-var config = rc('caas');
-
 commander
   .version('0.1.0', '-v, --version', 'Display the current software version')
   .option('-c, --config [path]', 'Specify a configuration file to load')
+  .option('--validate', 'Validate the configuration file')
   .parse(process.argv);
 
+var config;
 var fileTransport, consoleTransport, cwlTransport;
+
+function done(err) {
+  /**
+   * Log any error and exit.
+   */
+
+  var code = 0;
+
+  if (err) {
+    code = 1;
+    winston.error(err.message, err);
+  }
+
+  async.parallel([
+    (callback) => fileTransport.on('finished', callback),
+    (callback) => consoleTransport.on('finished', callback),
+    (callback) => {
+      if (cwlTransport) {
+        cwlTransport.kthxbye(callback);
+      } else {
+        callback();
+      }
+    }
+  ], () => {
+    process.exit(code);
+  });
+}
 
 async.waterfall([
   (callback) => {
@@ -46,22 +74,9 @@ async.waterfall([
     });
 
     var transports = [
-      consoleTransport,
-      fileTransport
+      fileTransport,
+      consoleTransport
     ];
-
-    var cw = _.get(config, 'import-springcm.logs.cloudwatch');
-
-    if (cw) {
-      // Set up logging to AWS CloudWatch Logs
-      cwlTransport = new WinstonCloudWatch(_.merge(cw, {
-        messageFormatter: (entry) => {
-          return JSON.stringify(_.get(entry, 'meta'));
-        }
-      }));
-
-      transports.push(cwlTransport);
-    }
 
     // Set up default logger with our transports
     winston.configure({
@@ -70,8 +85,83 @@ async.waterfall([
     });
 
     // Set up unhandled exception logging to our local log files and console
-    winston.handleExceptions(transports);
+    winston.exceptions.handle(transports);
 
+    callback();
+  },
+  (callback) => {
+    /**
+     * If --validate option was passed, validate the provided config and
+     * exit.
+     */
+
+    config = rc('caas');
+
+    if (commander.validate) {
+      var validator = new Validator();
+      var schema = JSON.parse(fs.readFileSync('./schema.json'));
+      var code = 0;
+
+      var result = validator.validate(config, schema);
+
+      if (!result) {
+        winston.info('? Schema validator encountered an error');
+      }
+
+      if (result.errors.length === 0) {
+        winston.info('✓ Schema validated');
+
+        done();
+      } else {
+        code = 1;
+
+        var err = new Error('✗ Schema not validated');
+
+        err.errors = result.validationErrors.map((err) => err.stack);
+
+        done(err);
+      }
+    } else {
+      return callback();
+    }
+  },
+  (callback) => {
+    /**
+     * If we're using a CloudWatch logging configuration, add that to our
+     * winston transports.
+     */
+
+    var cw = _.get(config, 'import-springcm.logs.cloudwatch');
+
+    if (!cw) {
+      return callback();
+    }
+
+    // Set up logging to AWS CloudWatch Logs
+    cwlTransport = new WinstonCloudWatch(_.merge(cw, {
+      messageFormatter: (entry) => {
+        return JSON.stringify(_.get(entry, 'meta'));
+      }
+    }));
+
+   var transports = [
+     consoleTransport,
+     fileTransport,
+     cwlTransport
+   ];
+
+    // Set up default logger with our transports
+    winston.configure({
+      level: 'info',
+      transports: transports
+    });
+
+    // Set up unhandled exception logging to our local log files and console
+    winston.exceptions.handle(transports);
+
+    callback();
+  },
+  (callback) => {
     winston.info('========================================');
     winston.info('caas-import-springcm');
     winston.info('========================================');
@@ -87,29 +177,4 @@ async.waterfall([
       callback(err);
     });
   }
-], (err) => {
-  /**
-   * Log any error and exit.
-   */
-
-  var code = 0;
-
-  if (err) {
-    code = 1;
-    winston.error(err);
-  }
-
-  async.parallel([
-    (callback) => fileTransport.on('finished', callback),
-    (callback) => consoleTransport.on('finished', callback),
-    (callback) => {
-      if (cwlTransport) {
-        cwlTransport.kthxbye(callback);
-      } else {
-        callback();
-      }
-    }
-  ], () => {
-    process.exit(code);
-  });
-});
+], done);

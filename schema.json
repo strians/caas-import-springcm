@@ -1,0 +1,116 @@
+{
+  "type": "object",
+  "properties": {
+    "import-springcm": {
+      "type": "object",
+      "properties": {
+        "tasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "job": {
+                "type": "string"
+              },
+              "customer": {
+                "type": "string"
+              },
+              "auth": {
+                "type": "object",
+                "properties": {
+                  "clientId": {
+                    "type": "string"
+                  },
+                  "clientSecret": {
+                    "type": "string"
+                  },
+                  "dataCenter": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "clientId",
+                  "clientSecret",
+                  "dataCenter"
+                ]
+              },
+              "paths": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "remote": {
+                      "type": "string"
+                    },
+                    "local": {
+                      "type": "string"
+                    },
+                    "wastebin": {
+                      "type": "string"
+                    },
+                    "recurse": {
+                      "type": "boolean"
+                    },
+                    "filter": {
+                      "type": "object",
+                      "properties": {
+                        "in": {
+                          "oneOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            {
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "out": {
+                          "oneOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            {
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "in"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "remote",
+                    "local",
+                    "wastebin",
+                    "recurse",
+                    "filter"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "job",
+              "customer",
+              "auth",
+              "paths"
+            ]
+          }
+        }
+      },
+      "required": [
+        "tasks"
+      ]
+    }
+  },
+  "required": [
+    "import-springcm"
+  ]
+}
