@@ -144,17 +144,14 @@ async.waterfall([
       }
     }));
 
+    // Set up default logger with our transports
+    winston.add(cwlTransport);
+
    var transports = [
      consoleTransport,
      fileTransport,
      cwlTransport
    ];
-
-    // Set up default logger with our transports
-    winston.configure({
-      level: 'info',
-      transports: transports
-    });
 
     // Set up unhandled exception logging to our local log files and console
     winston.exceptions.handle(transports);
