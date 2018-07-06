@@ -105,19 +105,19 @@ async.waterfall([
       var result = validator.validate(config, schema);
 
       if (!result) {
-        winston.info('? Schema validator encountered an error');
+        winston.info('Schema validator encountered an error');
       }
 
       if (result.errors.length === 0) {
-        winston.info('✓ Schema validated');
+        winston.info('Schema validated');
 
         done();
       } else {
         code = 1;
 
-        var err = new Error('✗ Schema not validated');
+        var err = new Error('Schema not validated');
 
-        err.errors = result.validationErrors.map((err) => err.stack);
+        err.errors = result.errors.map((err) => err.stack);
 
         done(err);
       }
