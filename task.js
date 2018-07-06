@@ -105,7 +105,14 @@ module.exports = (task, callback) => {
               });
             },
             (callback) => {
-              fs.copyFile(tmpPath, localPath, fs.constants.COPYFILE_EXCL, callback)
+              fs.copyFile(tmpPath, localPath, fs.constants.COPYFILE_EXCL, (err) => {
+                winston.info('Copied file to target directory', {
+                  localPath: localPath,
+                  tmpPath: tmpPath
+                });
+
+                callback();
+              });
             }
           ], callback);
         });
