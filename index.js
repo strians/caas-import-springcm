@@ -17,7 +17,7 @@ commander
   .option('--validate', 'Validate the configuration file')
   .parse(process.argv);
 
-var config;
+var config = rc('caas');
 var fileTransport, consoleTransport, cwlTransport;
 
 function done(err) {
@@ -127,8 +127,6 @@ async.waterfall([
      * If --validate option was passed, validate the provided config and
      * exit.
      */
-
-    config = rc('caas');
 
     if (commander.validate) {
       var validator = new Validator();
