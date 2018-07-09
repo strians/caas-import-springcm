@@ -140,7 +140,8 @@ async.waterfall([
 
       if (result.errors.length === 0) {
         winston.info('Schema validated', {
-          serviceName: 'caas-import-springcm'
+          serviceName: 'caas-import-springcm',
+          loadedConfigs: config.configs
         });
 
         done();
@@ -148,6 +149,7 @@ async.waterfall([
         var err = new Error('Schema not validated');
 
         err.serviceName = 'caas-import-springcm';
+        err.loadedConfigs = config.configs;
         err.errors = result.errors.map((err) => err.stack);
 
         done(err);
