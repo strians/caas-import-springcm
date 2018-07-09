@@ -91,39 +91,6 @@ async.waterfall([
   },
   (callback) => {
     /**
-     * If --validate option was passed, validate the provided config and
-     * exit.
-     */
-
-    config = rc('caas');
-
-    if (commander.validate) {
-      var validator = new Validator();
-      var schema = JSON.parse(fs.readFileSync('./schema.json'));
-
-      var result = validator.validate(config, schema);
-
-      if (!result) {
-        winston.info('Schema validator encountered an error');
-      }
-
-      if (result.errors.length === 0) {
-        winston.info('Schema validated');
-
-        done();
-      } else {
-        var err = new Error('Schema not validated');
-
-        err.errors = result.errors.map((err) => err.stack);
-
-        done(err);
-      }
-    } else {
-      return callback();
-    }
-  },
-  (callback) => {
-    /**
      * If we're using a CloudWatch logging configuration, add that to our
      * winston transports.
      */
@@ -154,6 +121,42 @@ async.waterfall([
     winston.exceptions.handle(transports);
 
     callback();
+  },
+  (callback) => {
+    /**
+     * If --validate option was passed, validate the provided config and
+     * exit.
+     */
+
+    config = rc('caas');
+
+    if (commander.validate) {
+      var validator = new Validator();
+      var schema = JSON.parse(fs.readFileSync('./schema.json'));
+
+      var result = validator.validate(config, schema);
+
+      if (!result) {
+        winston.info('Schema validator encountered an error');
+      }
+
+      if (result.errors.length === 0) {
+        winston.info('Schema validated', {
+          serviceName: 'caas-import-springcm'
+        });
+
+        done();
+      } else {
+        var err = new Error('Schema not validated');
+
+        err.serviceName = 'caas-import-springcm';
+        err.errors = result.errors.map((err) => err.stack);
+
+        done(err);
+      }
+    } else {
+      return callback();
+    }
   },
   (callback) => {
     /**
