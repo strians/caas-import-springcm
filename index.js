@@ -100,7 +100,6 @@ async.waterfall([
     if (commander.validate) {
       var validator = new Validator();
       var schema = JSON.parse(fs.readFileSync('./schema.json'));
-      var code = 0;
 
       var result = validator.validate(config, schema);
 
@@ -113,8 +112,6 @@ async.waterfall([
 
         done();
       } else {
-        code = 1;
-
         var err = new Error('Schema not validated');
 
         err.errors = result.errors.map((err) => err.stack);
@@ -147,11 +144,11 @@ async.waterfall([
     // Set up default logger with our transports
     winston.add(cwlTransport);
 
-   var transports = [
-     consoleTransport,
-     fileTransport,
-     cwlTransport
-   ];
+    var transports = [
+      consoleTransport,
+      fileTransport,
+      cwlTransport
+    ];
 
     // Set up unhandled exception logging to our local log files and console
     winston.exceptions.handle(transports);

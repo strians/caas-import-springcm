@@ -41,19 +41,19 @@ module.exports = (task, callback) => {
        * Create a temporary directory.
        */
 
-       fs.mkdtemp(path.join(os.tmpdir(), 'caas-import-springcm-'), (err, folder) => {
-         if (err) {
-           return callback(err);
-         }
+      fs.mkdtemp(path.join(os.tmpdir(), 'caas-import-springcm-'), (err, folder) => {
+        if (err) {
+          return callback(err);
+        }
 
-         tmpDir = folder;
+        tmpDir = folder;
 
-         winston.info('Creating temp directory', {
-           directory: tmpDir
-         });
+        winston.info('Creating temp directory', {
+          directory: tmpDir
+        });
 
-         callback();
-       });
+        callback();
+      });
     },
     (callback) => {
       /**
@@ -106,6 +106,10 @@ module.exports = (task, callback) => {
             },
             (callback) => {
               fs.copyFile(tmpPath, localPath, fs.constants.COPYFILE_EXCL, (err) => {
+                if (err) {
+                  return callback(err);
+                }
+
                 winston.info('Copied file to target directory', {
                   localPath: localPath,
                   tmpPath: tmpPath
