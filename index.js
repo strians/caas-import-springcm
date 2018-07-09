@@ -156,16 +156,13 @@ async.waterfall([
     callback();
   },
   (callback) => {
-    winston.info('========================================');
-    winston.info('caas-import-springcm');
-    winston.info('========================================');
-
-    callback();
-  },
-  (callback) => {
     /**
      * Run each configured import-springcm task.
      */
+
+    winston.info('========================================');
+    winston.info('caas-import-springcm');
+    winston.info('========================================');
 
     async.eachSeries(_.get(config, 'import-springcm.tasks'), task, (err) => {
       callback(err);
