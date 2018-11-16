@@ -78,7 +78,15 @@ module.exports = (task, callback) => {
               springCm.getDocument(doc, callback);
             },
             (doc, callback) => {
+              var docNameFormat = task.nameFormat;
               var docName = `${doc.getUid()}.pdf`;
+
+              if (docNameFormat) {
+                var name = path.basename(doc.getName(), path.extname(doc.getName()));
+                var formatted = docNameFormat.replace(/%UID%/g, doc.getUid())
+                                             .replace(/%NAME%/g, name);
+                docName = `${formatted}.pdf`;
+              }
 
               tmpPath = path.join(tmpDir, docName);
               localPath = path.join(local, docName);
