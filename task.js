@@ -83,8 +83,10 @@ module.exports = (task, callback) => {
 
               if (docNameFormat) {
                 var name = path.basename(doc.getName(), path.extname(doc.getName()));
+                var folder = path.basename(path.dirname(doc.getPath()));
                 var formatted = docNameFormat.replace(/%UID%/g, doc.getUid())
-                                             .replace(/%NAME%/g, name);
+                                             .replace(/%NAME%/g, name)
+                                             .replace(/%FOLDER%/g, folder);
                 docName = `${formatted}.pdf`;
               }
 
