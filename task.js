@@ -78,16 +78,17 @@ module.exports = (task, callback) => {
               springCm.getDocument(doc, callback);
             },
             (doc, callback) => {
+              var ext = path.extname(doc.getName());
               var docNameFormat = task.nameFormat;
-              var docName = `${doc.getUid()}.pdf`;
+              var docName = `${doc.getUid()}${ext}`;
 
               if (docNameFormat) {
-                var name = path.basename(doc.getName(), path.extname(doc.getName()));
+                var name = path.basename(doc.getName(), ext);
                 var folder = path.basename(path.dirname(doc.getPath()));
                 var formatted = docNameFormat.replace(/%UID%/g, doc.getUid())
                                              .replace(/%NAME%/g, name)
                                              .replace(/%FOLDER%/g, folder);
-                docName = `${formatted}.pdf`;
+                docName = `${formatted}${ext}`;
               }
 
               tmpPath = path.join(tmpDir, docName);
@@ -101,7 +102,8 @@ module.exports = (task, callback) => {
 
                 winston.info('Downloaded document', {
                   remote: doc.getPath(),
-                  local: tmpPath
+                  local: tmpPath,
+                  format: docNameFormat
                 });
 
                 var wastebin = _.get(pathConfig, 'wastebin');
